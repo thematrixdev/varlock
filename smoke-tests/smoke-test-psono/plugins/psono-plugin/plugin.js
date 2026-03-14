@@ -19,7 +19,7 @@ plugin.registerRootDecorator({
     pluginInstances[id] = { id, configPath };
     return { id, configPath };
   },
-  async execute({ id, configPath }) {
+  async execute({ id: _id, configPath: _configPath }) {
     // no-op for mock
   },
 });
@@ -85,7 +85,7 @@ plugin.registerResolverFunction({
 
     return { instanceId, secretIdResolver };
   },
-  async resolve({ instanceId, secretIdResolver }) {
+  async resolve({ instanceId: _instanceId, secretIdResolver }) {
     const secretId = await secretIdResolver.resolve();
     return `mock-totp-${secretId}`;
   },
