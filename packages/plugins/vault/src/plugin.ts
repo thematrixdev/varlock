@@ -172,15 +172,16 @@ class VaultPluginInstance {
         headers: this.namespace ? { 'X-Vault-Namespace': this.namespace } : undefined,
       }).json<VaultAppRoleLoginResponse>();
 
-      const { client_token, lease_duration } = response.auth;
+      const clientToken = response.auth.client_token;
+      const leaseDuration = response.auth.lease_duration;
 
       this.cachedToken = {
-        token: client_token,
-        expiresAt: Date.now() + (lease_duration * 1000),
+        token: clientToken,
+        expiresAt: Date.now() + (leaseDuration * 1000),
       };
 
-      debug('AppRole login successful, token cached for', lease_duration, 'seconds');
-      return client_token;
+      debug('AppRole login successful, token cached for', leaseDuration, 'seconds');
+      return clientToken;
     } catch (err) {
       return this.handleHttpError(err, 'AppRole login');
     }
@@ -222,7 +223,7 @@ class VaultPluginInstance {
       : `${this.addr}/v1/${this.mount}/${path}`;
 
     try {
-      debug('fetching vault secret:', path, '(kv v' + this.kvVersion + ')');
+      debug('fetching vault secret:', path, `(kv v${this.kvVersion})`);
 
       if (this.kvVersion === 2) {
         const response = await ky.get(url, {
