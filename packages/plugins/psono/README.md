@@ -93,8 +93,19 @@ server_url = "https://your-psono-server.com/server"
 If you need to connect to multiple Psono servers or API keys, register multiple named instances:
 
 ```env-spec
+# @plugin(@varlock/psono-plugin)
 # @initPsono(configPath=~/.config/psonoci/personal.toml)
 # @initPsono(configPath=~/.config/psonoci/work.toml, id=work)
+# ---
+
+# Uses default instance (personal) — no id needed
+DB_PASS=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
+
+# Uses "work" instance — pass id as first argument
+WORK_SECRET=psono("work", "9f10de7d-34ad-469a-a062-cafbd3dd847c", "password")
+
+# TOTP also supports named instances
+WORK_MFA=psonoTotp("work", "ba2a3cff-c29d-42ef-b965-9919d867279f")
 ```
 
 ## Reading secrets
