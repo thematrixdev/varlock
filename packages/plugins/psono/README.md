@@ -148,8 +148,13 @@ Initialize a Psono plugin instance.
 
 **Parameters:**
 
-- `configPath?: string` - Path to `psonoci` TOML config file. If omitted, `psonoci` falls back to environment variables.
+- `configPath?: string` - Path to `psonoci` TOML config file. Mutually exclusive with direct credentials.
+- `apiKeyId?: string` - Psono API key UUID. Should be a reference to a config item (e.g. `$PSONO_CI_API_KEY_ID`).
+- `apiSecretKeyHex?: string` - Psono API secret key (64-byte hex). Should be a reference to a sensitive config item.
+- `serverUrl?: string` - Psono server URL (e.g. `https://psono.example.com/server`).
 - `id?: string` - Instance identifier for multiple accounts (defaults to `_default`)
+
+Use either `configPath` **or** `apiKeyId` + `apiSecretKeyHex` + `serverUrl`. If none are provided, `psonoci` falls back to environment variables (`PSONO_CI_API_KEY_ID`, etc.).
 
 ### Functions
 

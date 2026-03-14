@@ -18,11 +18,15 @@ const FIX_INSTALL_TIP = [
 
 /**
  * Manages interaction with a Psono server via the `psonoci` CLI.
- * Each instance maps to one Psono API key (i.e. one config file).
+ * Each instance maps to one Psono API key (via config file or direct credentials).
  */
 class PsonoPluginInstance {
   /** Path to the psonoci TOML config file */
   private configPath?: string;
+  /** Direct credentials (alternative to configPath) */
+  private apiKeyId?: string;
+  private apiSecretKeyHex?: string;
+  private serverUrl?: string;
 
   /** Cache of fetched secret fields for the current resolution session */
   private cache = new Map<string, string>();
@@ -31,23 +35,44 @@ class PsonoPluginInstance {
 
   constructor(readonly id: string) {}
 
-  configure(configPath?: string) {
-    this.configPath = configPath;
+  configure(opts: {
+    configPath?: string;
+    apiKeyId?: string;
+    apiSecretKeyHex?: string;
+    serverUrl?: string;
+  }) {
+    this.configPath = opts.configPath;
+    this.apiKeyId = opts.apiKeyId;
+    this.apiSecretKeyHex = opts.apiSecretKeyHex;
+    this.serverUrl = opts.serverUrl;
     debug(
       'psono instance',
       this.id,
-      'configured - configPath:',
-      this.configPath || '(env/default)',
+      'configured -',
+      this.configPath
+        ? `configPath: ${this.configPath}`
+        : `direct credentials (hasApiKeyId: ${!!this.apiKeyId}, hasServerUrl: ${!!this.serverUrl})`,
     );
   }
 
   /**
    * Build the base args for psonoci commands.
-   * If configPath is set, prepends `-c <path>`.
+   * Uses direct credentials (--api-key-id, etc.) when provided,
+   * otherwise falls back to config file (-c) or env vars.
    */
   private get baseArgs(): Array<string> {
-    if (!this.configPath) return [];
-    return ['-c', this.configPath];
+    if (this.apiKeyId && this.apiSecretKeyHex && this.serverUrl) {
+      return [
+        '--api-key-id',
+        this.apiKeyId,
+        '--api-secret-key-hex',
+        this.apiSecretKeyHex,
+        '--server-url',
+        this.serverUrl,
+      ];
+    }
+    if (this.configPath) return ['-c', this.configPath];
+    return [];
   }
 
   /**
@@ -212,12 +237,33 @@ plugin.registerRootDecorator({
       ? String(objArgs.configPath.staticValue)
       : undefined;
 
+    // configPath and direct credentials are mutually exclusive
+    if (configPath && (objArgs?.apiKeyId || objArgs?.apiSecretKeyHex || objArgs?.serverUrl)) {
+      throw new SchemaError('Cannot use configPath together with apiKeyId/apiSecretKeyHex/serverUrl', {
+        tip: 'Use either configPath for a config file, or apiKeyId + apiSecretKeyHex + serverUrl for direct credentials.',
+      });
+    }
+
     pluginInstances[id] = new PsonoPluginInstance(id);
 
-    return { id, configPath };
+    return {
+      id,
+      configPath,
+      apiKeyIdResolver: objArgs?.apiKeyId,
+      apiSecretKeyHexResolver: objArgs?.apiSecretKeyHex,
+      serverUrlResolver: objArgs?.serverUrl,
+    };
   },
-  async execute({ id, configPath }) {
-    pluginInstances[id].configure(configPath);
+  async execute({
+    id, configPath, apiKeyIdResolver, apiSecretKeyHexResolver, serverUrlResolver,
+  }) {
+    const apiKeyId = apiKeyIdResolver ? String(await apiKeyIdResolver.resolve()) : undefined;
+    const apiSecretKeyHex = apiSecretKeyHexResolver ? String(await apiSecretKeyHexResolver.resolve()) : undefined;
+    const serverUrl = serverUrlResolver ? String(await serverUrlResolver.resolve()) : undefined;
+
+    pluginInstances[id].configure({
+      configPath, apiKeyId, apiSecretKeyHex, serverUrl,
+    });
   },
 });
 
