@@ -20,14 +20,6 @@ Install the `psonoci` CLI:
 - Download from [GitHub Releases](https://github.com/meldron/psonoci/releases)
 - Or follow the [Psono CI documentation](https://doc.psono.com/admin/installation/install-psono-ci.html)
 
-Create a config file (e.g. `~/.config/psonoci/config.toml`):
-
-```toml
-api_key_id = "your-api-key-uuid"
-api_secret_key_hex = "your-64-byte-hex-secret"
-server_url = "https://your-psono-server.com/server"
-```
-
 ## Installation
 
 If you are in a JavaScript based project and have a package.json file, you can either install the plugin explicitly
@@ -46,9 +38,35 @@ Otherwise just set the explicit version number when you register it
 
 See our [Plugin Guide](https://varlock.dev/guides/plugins/#installation) for more details.
 
-## Setup
+## Setup + Auth
 
-After registering the plugin, initialize it with the `@initPsono` root decorator:
+After registering the plugin, you must initialize it with the `@initPsono` root decorator.
+
+### Environment variables (for deployed environments)
+
+For deployed environments (CI/CD, production, etc), you can use environment variables instead of a config file. When `configPath` is omitted, `psonoci` falls back to these env vars automatically:
+
+```env-spec
+# @plugin(@varlock/psono-plugin)
+# @initPsono()
+# ---
+
+# @type=psonoApiKeyId
+PSONO_CI_API_KEY_ID=
+
+# @sensitive
+PSONO_CI_API_SECRET_KEY_HEX=
+
+PSONO_CI_SERVER_URL=https://your-psono-server.com/server
+
+DB_PASSWORD=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
+```
+
+Set these env vars in your platform's secret/env management (e.g. GitHub Actions secrets, Docker env, etc).
+
+### Config file (for local development)
+
+During local development, you can point to a `psonoci` config file instead:
 
 ```env-spec
 # @plugin(@varlock/psono-plugin)
@@ -58,11 +76,21 @@ After registering the plugin, initialize it with the `@initPsono` root decorator
 DB_PASSWORD=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
 ```
 
-If `configPath` is omitted, `psonoci` falls back to environment variables (`PSONO_CI_API_KEY_ID`, `PSONO_CI_API_SECRET_KEY_HEX`, `PSONO_CI_SERVER_URL`).
+**How to create a config file:**
 
-### Multiple accounts
+1. Create a [Psono API key](https://doc.psono.com/admin/installation/install-psono-ci.html) in your Psono admin panel
+2. Grant the API key access to the required secrets
+3. Save the config file:
 
-Register multiple named instances to connect to different Psono servers or API keys:
+```toml
+api_key_id = "your-api-key-uuid"
+api_secret_key_hex = "your-64-byte-hex-secret"
+server_url = "https://your-psono-server.com/server"
+```
+
+### Multiple instances
+
+If you need to connect to multiple Psono servers or API keys, register multiple named instances:
 
 ```env-spec
 # @initPsono(configPath=~/.config/psonoci/personal.toml)
