@@ -90,13 +90,27 @@ server_url = "https://your-psono-server.com/server"
 
 ### Multiple instances
 
-If you need to connect to multiple Psono servers or API keys, register multiple named instances:
+If you need to connect to multiple Psono servers or API keys, register multiple named instances.
+
+**Using direct credentials (recommended for CI/CD):**
 
 ```env-spec
 # @plugin(@varlock/psono-plugin)
-# @initPsono(configPath=~/.config/psonoci/personal.toml)
-# @initPsono(configPath=~/.config/psonoci/work.toml, id=work)
+# @initPsono(apiKeyId=$PSONO_PERSONAL_KEY, apiSecretKeyHex=$PSONO_PERSONAL_SECRET, serverUrl=$PSONO_PERSONAL_URL)
+# @initPsono(apiKeyId=$PSONO_WORK_KEY, apiSecretKeyHex=$PSONO_WORK_SECRET, serverUrl=$PSONO_WORK_URL, id=work)
 # ---
+
+# @type=psonoApiKeyId
+PSONO_PERSONAL_KEY=
+# @sensitive
+PSONO_PERSONAL_SECRET=
+PSONO_PERSONAL_URL=https://psono-personal.example.com/server
+
+# @type=psonoApiKeyId
+PSONO_WORK_KEY=
+# @sensitive
+PSONO_WORK_SECRET=
+PSONO_WORK_URL=https://psono-work.example.com/server
 
 # Uses default instance (personal) — no id needed
 DB_PASS=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
@@ -106,6 +120,18 @@ WORK_SECRET=psono("work", "9f10de7d-34ad-469a-a062-cafbd3dd847c", "password")
 
 # TOTP also supports named instances
 WORK_MFA=psonoTotp("work", "ba2a3cff-c29d-42ef-b965-9919d867279f")
+```
+
+**Using config files (for local development):**
+
+```env-spec
+# @plugin(@varlock/psono-plugin)
+# @initPsono(configPath=~/.config/psonoci/personal.toml)
+# @initPsono(configPath=~/.config/psonoci/work.toml, id=work)
+# ---
+
+DB_PASS=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
+WORK_SECRET=psono("work", "9f10de7d-34ad-469a-a062-cafbd3dd847c", "password")
 ```
 
 ## Reading secrets
