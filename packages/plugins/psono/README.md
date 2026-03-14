@@ -42,13 +42,9 @@ See our [Plugin Guide](https://varlock.dev/guides/plugins/#installation) for mor
 
 After registering the plugin, you must initialize it with the `@initPsono` root decorator.
 
-### Environment variables (for deployed environments)
-
-For deployed environments (CI/CD, production, etc), you can use environment variables instead of a config file. When `configPath` is omitted, `psonoci` falls back to these env vars automatically:
-
 ```env-spec
 # @plugin(@varlock/psono-plugin)
-# @initPsono()
+# @initPsono(apiKeyId=$PSONO_CI_API_KEY_ID, apiSecretKeyHex=$PSONO_CI_API_SECRET_KEY_HEX, serverUrl=$PSONO_CI_SERVER_URL)
 # ---
 
 # @type=psonoApiKeyId
@@ -62,37 +58,15 @@ PSONO_CI_SERVER_URL=https://your-psono-server.com/server
 DB_PASSWORD=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
 ```
 
-Set these env vars in your platform's secret/env management (e.g. GitHub Actions secrets, Docker env, etc).
-
-### Config file (for local development)
-
-During local development, you can point to a `psonoci` config file instead:
-
-```env-spec
-# @plugin(@varlock/psono-plugin)
-# @initPsono(configPath=~/.config/psonoci/config.toml)
-# ---
-
-DB_PASSWORD=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
-```
-
-**How to create a config file:**
+**How to create an API key:**
 
 1. Create a [Psono API key](https://doc.psono.com/admin/installation/install-psono-ci.html) in your Psono admin panel
 2. Grant the API key access to the required secrets
-3. Save the config file:
-
-```toml
-api_key_id = "your-api-key-uuid"
-api_secret_key_hex = "your-64-byte-hex-secret"
-server_url = "https://your-psono-server.com/server"
-```
+3. Set the credentials in your environment or `.env` file
 
 ### Multiple instances
 
-If you need to connect to multiple Psono servers or API keys, register multiple named instances.
-
-**Using direct credentials (recommended for CI/CD):**
+If you need to connect to multiple Psono servers or API keys, register multiple named instances:
 
 ```env-spec
 # @plugin(@varlock/psono-plugin)
@@ -120,18 +94,6 @@ WORK_SECRET=psono("work", "9f10de7d-34ad-469a-a062-cafbd3dd847c", "password")
 
 # TOTP also supports named instances
 WORK_MFA=psonoTotp("work", "ba2a3cff-c29d-42ef-b965-9919d867279f")
-```
-
-**Using config files (for local development):**
-
-```env-spec
-# @plugin(@varlock/psono-plugin)
-# @initPsono(configPath=~/.config/psonoci/personal.toml)
-# @initPsono(configPath=~/.config/psonoci/work.toml, id=work)
-# ---
-
-DB_PASS=psono("4cd7a400-e8b5-43b2-b732-c36fafc07808")
-WORK_SECRET=psono("work", "9f10de7d-34ad-469a-a062-cafbd3dd847c", "password")
 ```
 
 ## Reading secrets
@@ -174,13 +136,10 @@ Initialize a Psono plugin instance.
 
 **Parameters:**
 
-- `configPath?: string` - Path to `psonoci` TOML config file. Mutually exclusive with direct credentials.
 - `apiKeyId?: string` - Psono API key UUID. Should be a reference to a config item (e.g. `$PSONO_CI_API_KEY_ID`).
 - `apiSecretKeyHex?: string` - Psono API secret key (64-byte hex). Should be a reference to a sensitive config item.
 - `serverUrl?: string` - Psono server URL (e.g. `https://psono.example.com/server`).
 - `id?: string` - Instance identifier for multiple accounts (defaults to `_default`)
-
-Use either `configPath` **or** `apiKeyId` + `apiSecretKeyHex` + `serverUrl`. If none are provided, `psonoci` falls back to environment variables (`PSONO_CI_API_KEY_ID`, etc.).
 
 ### Functions
 
@@ -221,15 +180,15 @@ Get a TOTP token for a Psono secret.
 
 ### Secret not found
 - Verify the secret UUID is correct
-- List available secrets: `psonoci -c <config> api-key secrets | jq keys`
+- List available secrets: `psonoci --api-key-id <id> --api-secret-key-hex <hex> --server-url <url> api-key secrets | jq keys`
 
 ### Authentication failed
 - Check that your API key has access to the secret
 - Verify the API key permissions in Psono admin panel
 
 ### Configuration error
-- Ensure your config file contains `api_key_id`, `api_secret_key_hex`, and `server_url`
-- Verify the config file path is correct
+- Ensure `apiKeyId`, `apiSecretKeyHex`, and `serverUrl` are all provided
+- Verify the server URL is correct and reachable
 
 ## Resources
 
